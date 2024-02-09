@@ -28,7 +28,7 @@ import subprocess
 import readline
 import signal
 import sys
-
+import tkinter as tk
 
 color = {
     "CE":"\033[93mCE\033[0m",
@@ -43,34 +43,57 @@ color = {
     "WR":"\033[37mE\033[0m"
 }
 
+def button_clicked(atcoder,ts,code):
+    if(ts == "test"):
+        atcoder.test_code(code)
+    elif(ts == "send"):
+        atcoder.send_code(code)
 
 def main():
     """ 
     entry point
     """
-    atcoder = Atcoder()
-    atcoder.search_contest()
-    atcoder.login()
-    while(True):
-        command = input("♡ command?(m for help) > ")
-        if(len(command)==0):
-            pass
-        elif(command == 'm'):
-            print(
-                '   Usage: tcode[a,b,..h(Ex)]   test code(dont need space)\n'\
-                '      or: scode[a,b,..h(Ex)]   send code(dont need space)\n'\
-                '      or: c                    check result\n'\
-                '      or: exit                 exit        '
-            )
-        elif(command[0]=='t' and len(command)==2):
-            atcoder.test_code(command[1])
-        elif(command[0]=='s' and len(command)==2):
-            atcoder.send_code(command[1])
-        elif(command[0]=='c'):
-            atcoder.check_code()
-        elif(command=='exit' or command=='e'):
-            break
 
+    atcoder = Atcoder()
+    while True:
+        try:
+            with open("./data/recent.txt",'r') as f:
+                recent = f.read()
+                atcoder.contest = input("♡ contest?(r for {},e for exit) > ".format(recent))
+                if(atcoder.contest == 'r'):
+                    atcoder.contest = recent
+        except FileNotFoundError:
+            atcoder.contest = input("♡ contest?(e for exit)")
+        if(atcoder.contest == "e"):
+            sys.exit()
+        if(atcoder.search_contest()):
+            break
+    atcoder.login()
+    root = tk.Tk()
+    root.title("atcoder_tool")
+    root.geometry("400x400")
+    root.attributes('-type', 'dialog')
+    frame = tk.Frame(root)
+    frame.pack()
+    labels = "abcdefghabcdefgh"
+    index = 0
+    for i in range(4):
+        for j in range(4):
+            button_number = i * 4 + j + 1
+            message = f"Hello from Button {button_number}"
+            label = labels[index]
+            index += 1
+            ts = 'test' if button_number < 8 else 'send'
+            button = tk.Button(frame, text=label, width=10, height=2, command=lambda atcoder=atcoder, ts=ts, code=label: button_clicked(atcoder,ts,code))
+            #button.config(bg="blue", fg="white", font=("setofont", 30))
+            button.grid(row=i, column=j, padx=5, pady=5)
+
+    button1 = tk.Button(frame, text="check", width=10, height=2, command=lambda: atcoder.check_code())
+    button1.grid(row=4, column=1, padx=5, pady=5)
+
+    button2 = tk.Button(frame, text="exit", width=10, height=2, command=lambda: sys.exit())
+    button2.grid(row=4, column=2, padx=5, pady=5)
+    root.mainloop()
 
 def disable_ctrl_c(signal, frame):
     pass
@@ -112,29 +135,19 @@ class Atcoder:
                         store contestname to self.contest.
                         self.contest = 'abc222'
         """
-        while True:
-            try:
-                with open("./data/recent.txt",'r') as f:
-                    recent = f.read()
-                    self.contest = input("♡ contest?(r for {},e for exit) > ".format(recent))
-                    if(self.contest == 'r'):
-                        self.contest = recent
-            except FileNotFoundError:
-                self.contest = input("♡ contest?(e for exit)")
-            if(self.contest == "e"):
-                sys.exit()
-            response = requests.get("https://atcoder.jp/contests/{}".format(self.contest))
-            if response.status_code == 200:
-                print('    Contest {} found!'.format(self.contest))
-                mkdir("./data")
-                with open("./data/recent.txt",'w') as f:
-                    f.write(self.contest)
-                break
-            else:
-                print('    Contest does not exist') 
-        if(mkdir("./{}".format(self.contest))):
-            self._get_question_list()
-            self._get_io()
+        response = requests.get("https://atcoder.jp/contests/{}".format(self.contest))
+        if response.status_code == 200:
+            print('    Contest {} found!'.format(self.contest))
+            if(mkdir("./{}".format(self.contest))):
+                self._get_question_list()
+                self._get_io()
+            mkdir("./data")
+            with open("./data/recent.txt",'w') as f:
+                f.write(self.contest)
+            return True
+        else:
+            print('    Contest does not exist') 
+            return False
 
     def _get_question_list(self):
         """ 
@@ -276,7 +289,6 @@ class Atcoder:
         }
         f.close()
         response = self.session.post("https://atcoder.jp/contests/{}/submit".format(self.contest), params=data)
-        print("\n    Code sent!\n")
 
     def check_code(self):
         """ 
