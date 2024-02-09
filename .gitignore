@@ -1,0 +1,5 @@
+data/credentials.txt
+__pycache__
+a.out
+venv
+.vimse
