@@ -240,7 +240,11 @@ class Atcoder:
         description :   test provided code
         """
         file_path = './{}/{}.cpp'.format(self.contest,code)
-        input_files = os.listdir("./{}/testcase/{}/in".format(self.contest,code))
+        try:
+            input_files = os.listdir("./{}/testcase/{}/in".format(self.contest,code))
+        except FileNotFoundError:
+            print("question {} is nothing".format(code))
+            return
         process = subprocess.Popen(['g++', file_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         output, error = process.communicate()
         if error:
@@ -250,10 +254,19 @@ class Atcoder:
             print("Compilation successful")
         accnt = 0
         sum = 0
+        tle = False
         for input_file in input_files:
             try:
                 with open("./{}/testcase/{}/in/{}".format(self.contest,code,input_file), 'r') as f:
                     process = subprocess.Popen(['./a.out'], stdin=f, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    start_time = time.time()
+                    tlein = False
+                    while process.poll() is None:
+                        if time.time() - start_time > 3:
+                            process.terminate()
+                            tle = True
+                            tlein = True
+                            break
                     output, error = process.communicate()
 
                 # Check if there was an error during execution
@@ -273,6 +286,8 @@ class Atcoder:
                     if(outfile.read().replace("\n", "").rstrip() == output.decode().replace("\n", "").rstrip()):
                         print("result: {} - {}\n".format(input_file,color["AC"]))
                         accnt += 1
+                    elif(tlein == True):
+                        print("result: {} - {}\n".format(input_file,color["TLE"]))
                     else:
                         print("result: {} - {}\n".format(input_file,color["WA"]))
             except FileNotFoundError:
@@ -281,6 +296,8 @@ class Atcoder:
             sum += 1
         if (accnt == sum):
             print("test result:    {} - {}".format(code,color["AC"]))
+        elif(tle == True):
+            print("test result:    {} - {}".format(code,color["TLE"]))
         else:
             print("test result:    {} - {}".format(code,color["WA"]))
     
@@ -292,7 +309,11 @@ class Atcoder:
         """
         file_path = './{}/{}.cpp'.format(self.contest,code)
         input_file = "./input.txt"
-        process = subprocess.Popen(['g++', file_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        try:
+            process = subprocess.Popen(['g++', file_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        except FileNotFoundError:
+            print("question {} is nothing".format(code))
+            return
         output, error = process.communicate()
         if error:
             print("Compilation failed:")
@@ -354,7 +375,11 @@ class Atcoder:
         return value:   none
         description :   send code
         """
-        f = open("./{}/{}.cpp".format(self.contest,code),'r')
+        try:
+            f = open("./{}/{}.cpp".format(self.contest,code),'r')
+        except FileNotFoundError:
+            print("question {} is nothing".format(code))
+            return
         data = {
             "data.TaskScreenName":"{}_{}".format(self.contest,code),
             "data.LanguageId":"5001",

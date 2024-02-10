@@ -17,5 +17,8 @@ template<class T, class U>
 bool chmin(T &a, const U &b){ return a > b ? (a = b, 1) : 0; }
 
 int main(){
-    
+    while(1){
+        int a = 1;
+        cout << "";
+    }
 }
