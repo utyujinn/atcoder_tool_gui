@@ -29,18 +29,20 @@ import readline
 import signal
 import sys
 import tkinter as tk
+import time
+import datetime
 
 color = {
     "CE":"\033[93mCE\033[0m",
-    "MLE":"\033[93mCE\033[0m",
-    "TLE":"\033[93mCE\033[0m",
-    "RE":"\033[93mCE\033[0m",
-    "OLE":"\033[93mCE\033[0m",
-    "IE":"\033[93mCE\033[0m",
-    "WA":"\033[93mCE\033[0m",
+    "MLE":"\033[93mMLE\033[0m",
+    "TLE":"\033[93mTLE\033[0m",
+    "RE":"\033[93mRE\033[0m",
+    "OLE":"\033[93mOLE\033[0m",
+    "IE":"\033[93mIE\033[0m",
+    "WA":"\033[93mWA\033[0m",
     "AC":"\033[92mAC\033[0m",
-    "WJ":"\033[37mCE\033[0m",
-    "WR":"\033[37mE\033[0m"
+    "WJ":"\033[36mWJ\033[0m",
+    "WR":"\033[36mWR\033[0m"
 }
 
 def button_clicked(atcoder,ts,code):
@@ -48,6 +50,17 @@ def button_clicked(atcoder,ts,code):
         atcoder.test_code(code)
     elif(ts == "send"):
         atcoder.send_code(code)
+    elif(ts == "test_manually"):
+        atcoder.test_code_manually(code)
+    print(datetime.datetime.now().strftime('time:   %H:%M:%S\n'))
+
+def check_button(atcoder):
+    atcoder.check_code()
+    print(datetime.datetime.now().strftime('time:   %H:%M:%S\n'))
+
+def quit_program():
+    print("Bye")
+    sys.exit()
 
 def main():
     """ 
@@ -59,12 +72,12 @@ def main():
         try:
             with open("./data/recent.txt",'r') as f:
                 recent = f.read()
-                atcoder.contest = input("♡ contest?(r for {},e for exit) > ".format(recent))
+                atcoder.contest = input("♡ contest?(r for {}, q for quit) > ".format(recent))
                 if(atcoder.contest == 'r'):
                     atcoder.contest = recent
         except FileNotFoundError:
-            atcoder.contest = input("♡ contest?(e for exit)")
-        if(atcoder.contest == "e"):
+            atcoder.contest = input("♡ contest?(q for quit)")
+        if(atcoder.contest == "q"):
             sys.exit()
         if(atcoder.search_contest()):
             break
@@ -75,23 +88,28 @@ def main():
     root.attributes('-type', 'dialog')
     frame = tk.Frame(root)
     frame.pack()
-    labels = "abcdefghabcdefgh"
+    labels = "abcdefghabcdefghabcdefgh"
     index = 0
-    for i in range(4):
+    for i in range(6):
         for j in range(4):
             button_number = i * 4 + j + 1
             message = f"Hello from Button {button_number}"
             label = labels[index]
             index += 1
-            ts = 'test' if button_number < 8 else 'send'
+            ts = 'test' if button_number <= 8 else 'send'
+            if button_number > 16:
+                ts = 'test_manually' 
             button = tk.Button(frame, text=label, width=10, height=2, command=lambda atcoder=atcoder, ts=ts, code=label: button_clicked(atcoder,ts,code))
-            #button.config(bg="blue", fg="white", font=("setofont", 30))
-            button.grid(row=i, column=j, padx=5, pady=5)
+            if(i >= 4):
+                button.grid(row=i+1, column=j, padx=5, pady=5)
+            else:
+                button.grid(row=i, column=j, padx=5, pady=5)
 
-    button1 = tk.Button(frame, text="check", width=10, height=2, command=lambda: atcoder.check_code())
+
+    button1 = tk.Button(frame, text="check", width=10, height=2, command=lambda: check_button(atcoder))
     button1.grid(row=4, column=1, padx=5, pady=5)
 
-    button2 = tk.Button(frame, text="exit", width=10, height=2, command=lambda: sys.exit())
+    button2 = tk.Button(frame, text="quit", width=10, height=2, command=quit_program)
     button2.grid(row=4, column=2, padx=5, pady=5)
     root.mainloop()
 
@@ -224,7 +242,8 @@ class Atcoder:
             print(error.decode('utf-8'))
         else:
             print("Compilation successful")
-
+        accnt = 0
+        sum = 0
         for input_file in input_files:
             try:
                 with open("./{}/testcase/{}/in/{}".format(self.contest,code,input_file), 'r') as f:
@@ -236,14 +255,63 @@ class Atcoder:
                     print("Execution failed:")
                     print(error.decode('utf-8'))
                 else:
-                    print("Input:")
-                    with open("./{}/testcase/{}/in/{}".format(self.contest,code,input_file), 'r') as f:
-                        print(f.read())
-                    print("Output:")
-                    print(output.decode('utf-8'))
+                    infile = open("./{}/testcase/{}/in/{}".format(self.contest,code,input_file), 'r')
+                    outfile = open("./{}/testcase/{}/out/{}".format(self.contest,code,input_file), 'r')
+                    intext = infile.read()
+                    if intext.endswith("\n"):
+                        intext = intext[:-1]
+                    outtext = output.decode('utf-8')
+                    if outtext.endswith("\n"):
+                        outtext = outtext[:-1]
+                    print("I:  {}\nO:  {}".format(intext.replace("\n","\n    "),outtext.replace("\n","\n    ")))
+                    if(outfile.read().replace("\n", "") == output.decode().replace("\n", "")):
+                        print("result: {} - {}\n".format(input_file,color["AC"]))
+                        accnt += 1
+                    else:
+                        print("result: {} - {}\n".format(input_file,color["WA"]))
             except FileNotFoundError:
                 print("Error: C++ executable file not found")
                 break
+            sum += 1
+        if (accnt == sum):
+            print("test result:    {} - {}".format(code,color["AC"]))
+        else:
+            print("test result:    {} - {}".format(code,color["WA"]))
+    
+    def test_code_manually(self,code):
+        """ 
+        arguments   :   code = [a,b,..h(Ex)] 
+        return value:   none
+        description :   test provided code
+        """
+        file_path = './{}/{}.cpp'.format(self.contest,code)
+        input_file = "./input.txt"
+        process = subprocess.Popen(['g++', file_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        output, error = process.communicate()
+        if error:
+            print("Compilation failed:")
+            print(error.decode('utf-8'))
+        else:
+            print("Compilation successful")
+        try:
+            with open("./input.txt", 'r') as f:
+                process = subprocess.Popen(['./a.out'], stdin=f, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                output, error = process.communicate()
+            # Check if there was an error during execution
+            if error:
+                print("Execution failed:")
+                print(error.decode('utf-8'))
+            else:
+                infile = open("./input.txt", 'r')
+                intext = infile.read()
+                if intext.endswith("\n"):
+                    intext = intext[:-1]
+                outtext = output.decode('utf-8')
+                if outtext.endswith("\n"):
+                    outtext = outtext[:-1]
+                print("I:  {}\nO:  {}".format(intext.replace("\n","\n    "),outtext.replace("\n","\n    ")))
+        except FileNotFoundError:
+            print("Error: C++ executable file not found")
     
     def _get_csrf_token(self,url):
         """ 
@@ -280,7 +348,7 @@ class Atcoder:
         return value:   none
         description :   send code
         """
-        f = open("./abc318/a.cpp",'r')
+        f = open("./{}/{}.cpp".format(self.contest,code),'r')
         data = {
             "data.TaskScreenName":"{}_{}".format(self.contest,code),
             "data.LanguageId":"5001",
@@ -289,6 +357,8 @@ class Atcoder:
         }
         f.close()
         response = self.session.post("https://atcoder.jp/contests/{}/submit".format(self.contest), params=data)
+        print("Code sent!")
+        self.check_code()
 
     def check_code(self):
         """ 
@@ -296,15 +366,29 @@ class Atcoder:
         return value:   none
         description :   check code
         """
-        response = self.session.get("https://atcoder.jp/contests/{}/submissions/me".format(self.contest))
-        soup = BeautifulSoup(response.text, "html.parser")
-        submittions = soup.find_all('tr')
-        info = [td.text for td in submittions[1].find_all('td')]
-        if(info[7][0].isdigit()):
-            print('    {} - {} - {}'.format(info[1][0],color[info[6]],info[7]))
-        else:
-            print('    {} - {}'.format(info[1][0],color[info[6]]))
-
+        a = 0
+        while(True):
+            response = self.session.get("https://atcoder.jp/contests/{}/submissions/me".format(self.contest))
+            soup = BeautifulSoup(response.text, "html.parser")
+            submittions = soup.find_all('tr')
+            info = [td.text for td in submittions[1].find_all('td')]
+            try:
+                if(info[7][0].isdigit()):
+                    print('    {} - {} - {}'.format(info[1][0],color[info[6]],info[7]))
+                    break
+                elif(info[6]=="WJ"):
+                    if(a%4 == 0):
+                        print('    {} - {} ..'.format(info[1][0],color["WJ"]))
+                    time.sleep(1)
+                    a += 1
+                else:
+                    print('    {} - {}'.format(info[1][0],color[info[6]]))
+                    break
+            except KeyError:
+                if(a%4 == 0):
+                    print('    {} - {} judging..'.format(info[1][0],color["WJ"]))
+                time.sleep(1)
+                a += 1
 
 if __name__ == "__main__":
     main()

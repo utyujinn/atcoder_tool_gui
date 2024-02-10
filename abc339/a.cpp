@@ -17,5 +17,12 @@ template<class T, class U>
 bool chmin(T &a, const U &b){ return a > b ? (a = b, 1) : 0; }
 
 int main(){
-    
+    string s;
+    cin >> s;
+    int a = 0;
+    rep(i,s.length())
+        if(s[i]=='.')
+            a = i;
+    for(int i = a+1; i < s.length(); i++)
+        cout << s[i];
 }

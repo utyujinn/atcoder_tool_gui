@@ -17,5 +17,16 @@ template<class T, class U>
 bool chmin(T &a, const U &b){ return a > b ? (a = b, 1) : 0; }
 
 int main(){
-    
+    ll n;
+    cin >> n;
+    vl a(n);
+    rep(i,n)
+        cin >> a[i];
+    ll cur = 0;
+    rep(i,n){
+        cur += a[i];
+        if(cur < 0)
+            cur = 0;
+    }
+    cout << cur;
 }

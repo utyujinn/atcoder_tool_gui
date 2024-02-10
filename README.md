@@ -28,3 +28,10 @@ source env.sh
 ```
 a
 ```
+
+## Functions
+1. test code [a..h]
+2. send code [a..h]
+3. check result
+4. quit program
+5. test manually [a..h]
