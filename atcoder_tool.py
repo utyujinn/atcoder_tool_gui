@@ -68,6 +68,7 @@ def main():
     """
 
     atcoder = Atcoder()
+    atcoder.login()
     while True:
         try:
             with open("./data/recent.txt",'r') as f:
@@ -81,7 +82,6 @@ def main():
             sys.exit()
         if(atcoder.search_contest()):
             break
-    atcoder.login()
     root = tk.Tk()
     root.title("atcoder_tool")
     root.geometry("400x400")
@@ -153,7 +153,7 @@ class Atcoder:
                         store contestname to self.contest.
                         self.contest = 'abc222'
         """
-        response = requests.get("https://atcoder.jp/contests/{}".format(self.contest))
+        response = requests.get("https://atcoder.jp/contests/{}/tasks".format(self.contest))
         if response.status_code == 200:
             print('    Contest {} found!'.format(self.contest))
             if(mkdir("./{}".format(self.contest))):
@@ -174,8 +174,11 @@ class Atcoder:
         description :   get question list.
                         store contest links to linklist.
                         self.linklist = ['/contests/abc222/tasks/abc222_a','...']
-        """
-        response = requests.get("https://atcoder.jp/contests/{}/tasks".format(self.contest))
+        """        
+        data = {
+            "csrf_token":self._get_csrf_token("https://atcoder.jp/contests/{}/tasks".format(self.contest))
+        }
+        response = self.session.get("https://atcoder.jp/contests/{}/tasks".format(self.contest), params=data)
         soup = BeautifulSoup(response.text, "html.parser")
         elems = soup.find_all(href=re.compile("/contests/{}/tasks/abc".format(self.contest)))
         for elem in elems:
@@ -207,7 +210,10 @@ class Atcoder:
             mkdir("./{}/testcase/{}".format(self.contest,question[0]))
             mkdir("./{}/testcase/{}/in".format(self.contest,question[0]))
             mkdir("./{}/testcase/{}/out".format(self.contest,question[0]))
-            response = requests.get("https://atcoder.jp{}".format(link))
+            data = {
+                "csrf_token":self._get_csrf_token("https://atcoder.jp/{}".format(link))
+            }
+            response = self.session.get("https://atcoder.jp{}".format(link),params=data)
             soup = BeautifulSoup(response.text, "html.parser")
             iotmp = soup.find(class_='lang-ja').find_all('pre')
             iolist = []
@@ -264,7 +270,7 @@ class Atcoder:
                     if outtext.endswith("\n"):
                         outtext = outtext[:-1]
                     print("I:  {}\nO:  {}".format(intext.replace("\n","\n    "),outtext.replace("\n","\n    ")))
-                    if(outfile.read().replace("\n", "") == output.decode().replace("\n", "")):
+                    if(outfile.read().replace("\n", "").rstrip() == output.decode().replace("\n", "").rstrip()):
                         print("result: {} - {}\n".format(input_file,color["AC"]))
                         accnt += 1
                     else:
