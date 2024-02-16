@@ -247,9 +247,14 @@ class Atcoder:
             return
         process = subprocess.Popen(['g++', file_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         output, error = process.communicate()
+        ce = False
+        error_text = ""
         if error:
+            ce = True
+            error_text = error.decode('utf-8')
+            if error_text.endswith("\n"):
+                error_text = error_text[:-1]
             print("Compilation failed:")
-            print(error.decode('utf-8'))
         else:
             print("Compilation successful")
         accnt = 0
@@ -270,31 +275,44 @@ class Atcoder:
                     output, error = process.communicate()
 
                 # Check if there was an error during execution
+                infile = open("./{}/testcase/{}/in/{}".format(self.contest,code,input_file), 'r')
+                outfile = open("./{}/testcase/{}/out/{}".format(self.contest,code,input_file), 'r')
+                intext = infile.read()
+                if intext.endswith("\n"):
+                    intext = intext[:-1]
+                answer = outfile.read()
+                if answer.endswith("\n"):
+                    answer = answer[:-1]
                 if error:
                     print("Execution failed:")
-                    print(error.decode('utf-8'))
+                    error = error.decode('utf-8')
+                    if error.endswith("\n"):
+                        error = error[:-1]
+                    print(error)
+                    print("A:  {}".format(answer.replace("\n","\n    ")))
+                    print("result: {} - {}\n".format(input_file,color["WA"]))
                 else:
-                    infile = open("./{}/testcase/{}/in/{}".format(self.contest,code,input_file), 'r')
-                    outfile = open("./{}/testcase/{}/out/{}".format(self.contest,code,input_file), 'r')
-                    intext = infile.read()
-                    if intext.endswith("\n"):
-                        intext = intext[:-1]
                     outtext = output.decode('utf-8')
                     if outtext.endswith("\n"):
                         outtext = outtext[:-1]
                     print("I:  {}\nO:  {}".format(intext.replace("\n","\n    "),outtext.replace("\n","\n    ")))
-                    if(outfile.read().replace("\n", "").rstrip() == output.decode().replace("\n", "").rstrip()):
+                    if(answer.replace("\n", "").rstrip() == output.decode().replace("\n", "").rstrip()):
                         print("result: {} - {}\n".format(input_file,color["AC"]))
                         accnt += 1
                     elif(tlein == True):
+                        print("A:  {}".format(answer.replace("\n","\n    ")))
                         print("result: {} - {}\n".format(input_file,color["TLE"]))
                     else:
+                        print("A:  {}".format(answer.replace("\n","\n    ")))
                         print("result: {} - {}\n".format(input_file,color["WA"]))
             except FileNotFoundError:
                 print("Error: C++ executable file not found")
                 break
             sum += 1
-        if (accnt == sum):
+        if (ce == True):
+            print(error_text)
+            print("test result:    {} - {}".format(code,color["CE"]))
+        elif (accnt == sum):
             print("test result:    {} - {}".format(code,color["AC"]))
         elif(tle == True):
             print("test result:    {} - {}".format(code,color["TLE"]))
